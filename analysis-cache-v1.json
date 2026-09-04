@@ -1,0 +1,14 @@
+{
+  "version": "1.0",
+  "generatedFrom": {
+    "bpm": "essentia-rhythmextractor2013-multifeature-5segment-v1.3",
+    "energy": "pcm-5segment-dynamics-transients-library-relative-v1.1"
+  },
+  "timezone": "Europe/Berlin",
+  "dailyAnchor": "06:40",
+  "count": 159,
+  "bpmAccepted": 128,
+  "bpmPending": 31,
+  "libraryDurationSeconds": 50336.3,
+  "note": "Runtime cache is deployed on the live server. Full analyzed cache contains 159 tracks and is intentionally maintained with the live installation."
+}
