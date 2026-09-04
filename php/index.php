@@ -77,14 +77,33 @@ $action = $_GET['action'] ?? 'root';
 $tracks = null;
 $state = readState($stateFile);
 
+if ($action === 'debug') {
+  $checks = [];
+  foreach (($config['music_candidates'] ?? [$config['music_path']]) as $candidate) {
+    $checks[] = [
+      'path' => $candidate,
+      'realpath' => realpath($candidate) ?: null,
+      'is_dir' => is_dir($candidate),
+      'readable' => is_readable($candidate),
+      'entries' => is_dir($candidate) ? array_values(array_slice(scandir($candidate) ?: [], 0, 20)) : []
+    ];
+  }
+  out([
+    'documentRoot' => $_SERVER['DOCUMENT_ROOT'] ?? null,
+    'scriptDir' => __DIR__,
+    'selectedMusicPath' => $musicPath,
+    'checks' => $checks
+  ]);
+}
+
 if ($action === 'root') {
   out([
     'name' => 'SONO PLAY MINI LIVE',
-    'version' => '0.1.0-php',
+    'version' => '0.1.1-php',
     'musicPath' => $musicPath,
     'musicUrl' => $musicUrl,
     'endpoints' => [
-      '?action=library', '?action=status', '?action=play', '?action=next', '?action=stop'
+      '?action=library', '?action=status', '?action=play', '?action=next', '?action=stop', '?action=debug'
     ]
   ]);
 }
