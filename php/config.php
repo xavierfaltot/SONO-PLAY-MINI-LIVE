@@ -1,8 +1,24 @@
 <?php
+$root = dirname(__DIR__);
+$candidates = [
+  __DIR__ . '/../MUSIC',
+  __DIR__ . '/MUSIC',
+  $root . '/MUSIC',
+  dirname($root) . '/MUSIC',
+  $_SERVER['DOCUMENT_ROOT'] . '/MUSIC',
+];
+
+$musicPath = null;
+foreach ($candidates as $candidate) {
+  if ($candidate && is_dir($candidate)) {
+    $musicPath = $candidate;
+    break;
+  }
+}
+
 return [
-  // config.php and index.php are uploaded directly inside /SONO-PLAY-MINI-LIVE/
-  // /MUSIC/ is the sibling folder one level above.
-  'music_path' => __DIR__ . '/../MUSIC',
+  'music_path' => $musicPath ?: __DIR__ . '/../MUSIC',
   'music_url' => 'https://toutvabiensepasser.com/MUSIC/',
   'state_file' => __DIR__ . '/state.json',
+  'music_candidates' => $candidates,
 ];
