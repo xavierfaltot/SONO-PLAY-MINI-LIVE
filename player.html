@@ -3,23 +3,152 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SONO PLAY MINI LIVE — SYNC PLAYER V0.2</title>
+<title>SONO PLAY MINI LIVE</title>
 <style>
-:root{--bg:#0a0a0a;--fg:#f3eee4;--muted:#8f8f8f;--line:#2a2a2a}
+:root{
+  --bg:#060606;
+  --panel:#d9d1bf;
+  --ink:#111;
+  --red:#c22922;
+  --gold:#c89b32;
+  --amber:#ffb000;
+  --line:#2b2925;
+  --muted:#8f887b;
+}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--fg);font-family:Arial,Helvetica,sans-serif}
-main{max-width:760px;margin:0 auto;padding:24px}
-h1{font-size:20px;margin:0 0 18px}.clock{font-size:52px;font-weight:700;letter-spacing:-2px;margin:8px 0}.meta{color:var(--muted);font-size:13px;line-height:1.45}.card{border:1px solid var(--line);padding:18px;margin:18px 0}.now{font-size:18px;font-weight:700;word-break:break-word}.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:14px}button{background:var(--fg);color:#111;border:0;padding:12px 16px;font-weight:700;cursor:pointer}button:disabled{opacity:.45;cursor:default}progress{width:100%;height:14px}.kpi{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:14px}.kpi div{border-top:1px solid var(--line);padding-top:8px}.kpi b{display:block;font-size:18px}.small{font-size:11px;color:var(--muted)}@media(max-width:600px){.clock{font-size:38px}.kpi{grid-template-columns:repeat(2,1fr)}}
-</style></head><body><main>
-<h1>SONO PLAY MINI LIVE — SYNC PLAYER V0.2</h1><div class="clock" id="clock">--:--:--</div><div class="meta">Daily reset 06:40 · Europe/Berlin · synchronized virtual radio</div>
-<div class="card"><div class="small">NOW PLAYING</div><div class="now" id="track">loading…</div><div class="row"><button id="play" disabled>▶ LISTEN LIVE</button><button id="resync" disabled>↻ RESYNC</button></div><progress id="progress" max="100" value="0"></progress><div class="kpi"><div><span class="small">BPM</span><b id="bpm">—</b></div><div><span class="small">ENERGY</span><b id="energy">—</b></div><div><span class="small">POSITION</span><b id="position">—</b></div><div><span class="small">NEXT</span><b id="nextbpm">—</b></div></div></div>
-<div class="meta" id="status">Connecting to scheduler…</div><audio id="audio" preload="auto"></audio></main>
+html,body{margin:0;background:var(--bg);color:#e8e1d4;font-family:Arial,Helvetica,sans-serif}
+body{min-height:100vh;padding:28px 16px}
+.app{max-width:980px;margin:0 auto}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;margin-bottom:22px}
+.brand{font-size:14px;font-weight:900;letter-spacing:.15em}
+.tag{font-size:11px;color:#817b70;letter-spacing:.09em;text-align:right}
+.machine{display:grid;grid-template-columns:minmax(280px,380px) 1fr;gap:24px;align-items:start}
+.left,.right{min-width:0}
+.logo{display:grid;grid-template-columns:repeat(4,1fr);width:min(100%,380px);aspect-ratio:1/1;margin:0 auto 14px;background:#000;gap:2px}
+.tile{background:var(--panel);color:var(--ink);display:flex;align-items:center;justify-content:center;font-size:clamp(30px,5vw,66px);font-weight:1000;line-height:1;border:1px solid #161412}
+.tile.play{background:var(--red);color:#070707}
+.tile.live{background:var(--gold);color:#070707}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ctrl{min-height:88px;background:#11100f;border:2px solid #39342e;color:var(--red);font-size:30px;font-weight:900;cursor:pointer}
+.ctrl.alt{color:var(--gold)}
+.ctrl:disabled{opacity:.35;cursor:default}
+.screen{margin-top:10px;border:2px solid #302b23;background:#030303;color:var(--amber);font:900 12px/1.45 "Courier New",monospace;letter-spacing:.08em;min-height:54px;padding:10px;display:flex;align-items:center;justify-content:center;text-align:center}
+.clock{font-size:54px;font-weight:1000;letter-spacing:-2px;line-height:1;margin:0 0 12px;color:var(--panel)}
+.card{border:2px solid #302b23;background:#0d0c0b;padding:18px;margin-bottom:14px}
+.label{font:900 10px/1.3 "Courier New",monospace;letter-spacing:.16em;color:#6d675f;margin-bottom:8px}
+.now{font-size:22px;font-weight:900;word-break:break-word;line-height:1.08;color:#e8e1d4}
+progress{width:100%;height:8px;margin:16px 0 4px;accent-color:var(--amber)}
+.kpi{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:12px}
+.kpi div{border-top:1px solid #2a2723;padding-top:8px;min-width:0}
+.kpi b{display:block;font-size:19px;color:var(--amber);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.small{font-size:9px;letter-spacing:.12em;color:#6d675f;font-weight:900}
+.next{font-size:14px;font-weight:900;color:#d7d2c5;word-break:break-word}
+.status{border:2px solid #302b23;background:#030303;padding:12px;color:#8f887b;font:900 11px/1.5 "Courier New",monospace;letter-spacing:.06em}
+.mode{display:inline-flex;align-items:center;gap:8px;margin-top:10px;font:900 10px/1 "Courier New",monospace;letter-spacing:.12em;color:var(--gold)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--gold);box-shadow:0 0 10px rgba(200,155,50,.45)}
+@media(max-width:760px){body{padding:18px 12px}.machine{grid-template-columns:1fr}.logo{max-width:330px}.top{align-items:flex-start;flex-direction:column}.tag{text-align:left}.clock{font-size:42px}.kpi{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <div class="brand">SONO PLAY MINI LIVE</div>
+    <div class="tag">AUTO RADIO · BPM CLIMB · SURPRISES · LIVE READY</div>
+  </div>
+
+  <div class="machine">
+    <div class="left">
+      <div class="logo" aria-label="SONO PLAY MINI LIVE">
+        <div class="tile">S</div><div class="tile">O</div><div class="tile">N</div><div class="tile">O</div>
+        <div class="tile play">P</div><div class="tile play">L</div><div class="tile play">A</div><div class="tile play">Y</div>
+        <div class="tile">M</div><div class="tile">I</div><div class="tile">N</div><div class="tile">I</div>
+        <div class="tile live">L</div><div class="tile live">I</div><div class="tile live">V</div><div class="tile live">E</div>
+      </div>
+
+      <div class="controls">
+        <button class="ctrl" id="play" disabled>PLAY</button>
+        <button class="ctrl alt" id="resync" disabled>RESYNC</button>
+      </div>
+      <div class="screen" id="miniStatus">CONNECTING</div>
+    </div>
+
+    <div class="right">
+      <div class="clock" id="clock">--:--:--</div>
+
+      <div class="card">
+        <div class="label">NOW PLAYING</div>
+        <div class="now" id="track">loading…</div>
+        <progress id="progress" max="100" value="0"></progress>
+        <div class="kpi">
+          <div><span class="small">BPM</span><b id="bpm">—</b></div>
+          <div><span class="small">ENERGY</span><b id="energy">—</b></div>
+          <div><span class="small">POSITION</span><b id="position">—</b></div>
+          <div><span class="small">NEXT BPM</span><b id="nextbpm">—</b></div>
+        </div>
+        <div class="mode"><span class="dot"></span>AUTO</div>
+      </div>
+
+      <div class="card">
+        <div class="label">NEXT</div>
+        <div class="next" id="nexttrack">—</div>
+      </div>
+
+      <div class="status" id="status">Connecting to scheduler…</div>
+      <audio id="audio" preload="auto"></audio>
+    </div>
+  </div>
+</div>
+
 <script>
-const API='index.php?action=now';const audio=document.getElementById('audio'),play=document.getElementById('play'),resync=document.getElementById('resync'),status=document.getElementById('status');let state=null,wantedPlaying=false,pollTimer=null;
+const API='index.php?action=now';
+const audio=document.getElementById('audio');
+const play=document.getElementById('play');
+const resync=document.getElementById('resync');
+const status=document.getElementById('status');
+const miniStatus=document.getElementById('miniStatus');
+let state=null,wantedPlaying=false;
 function fmtSec(s){s=Math.max(0,Number(s)||0);const m=Math.floor(s/60),ss=Math.floor(s%60);return m+':'+String(ss).padStart(2,'0')}
-function tickClock(){document.getElementById('clock').textContent=new Intl.DateTimeFormat('fr-FR',{timeZone:'Europe/Berlin',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(new Date())}setInterval(tickClock,250);tickClock();
+function tickClock(){document.getElementById('clock').textContent=new Intl.DateTimeFormat('fr-FR',{timeZone:'Europe/Berlin',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(new Date())}
+setInterval(tickClock,250);tickClock();
 async function getState(){const r=await fetch(API,{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);return await r.json()}
-function paint(s){document.getElementById('track').textContent=s.current?.file||'—';document.getElementById('bpm').textContent=s.current?.bpm??'—';document.getElementById('energy').textContent=s.current?.energy??'—';document.getElementById('position').textContent=fmtSec(s.current?.position);document.getElementById('nextbpm').textContent=s.next?.bpm??'—';document.getElementById('progress').value=s.current?.progress??0;status.textContent=`Loop ${s.loopIndex} · ${s.scheduledTotalCount} tracks · ${s.scheduledSurpriseCount} surprises · next reset ${s.nextDailyReset}`}
-async function sync(force=false){try{const s=await getState();state=s;paint(s);play.disabled=false;resync.disabled=false;const url=s.current?.url,pos=Number(s.current?.position||0);if(!url)throw Error('No current track URL');const changed=audio.src!==url&&audio.currentSrc!==url;if(changed){audio.src=url;audio.load();await new Promise(resolve=>{if(audio.readyState>=1)return resolve();const done=()=>{audio.removeEventListener('loadedmetadata',done);resolve()};audio.addEventListener('loadedmetadata',done,{once:true});setTimeout(resolve,6000)});try{audio.currentTime=pos}catch(e){}if(wantedPlaying)await audio.play()}else{const drift=Math.abs((audio.currentTime||0)-pos);if(force||drift>2.5){try{audio.currentTime=pos}catch(e){}}}}catch(e){status.textContent='SYNC ERROR: '+e.message}}
-play.onclick=async()=>{wantedPlaying=!wantedPlaying;if(wantedPlaying){try{await sync(true);await audio.play();play.textContent='Ⅱ ON AIR'}catch(e){wantedPlaying=false;play.textContent='▶ LISTEN LIVE';status.textContent='PLAY ERROR: '+e.message}}else{audio.pause();play.textContent='▶ LISTEN LIVE'}};resync.onclick=()=>sync(true);audio.addEventListener('ended',()=>setTimeout(()=>sync(true),250));audio.addEventListener('error',()=>{status.textContent='AUDIO ERROR — resyncing…';setTimeout(()=>sync(true),1200)});pollTimer=setInterval(()=>sync(false),15000);sync(false);
-</script></body></html>
+function paint(s){
+  document.getElementById('track').textContent=s.current?.file||'—';
+  document.getElementById('bpm').textContent=s.current?.bpm??'—';
+  document.getElementById('energy').textContent=s.current?.energy??'—';
+  document.getElementById('position').textContent=fmtSec(s.current?.position);
+  document.getElementById('nextbpm').textContent=s.next?.bpm??'—';
+  document.getElementById('nexttrack').textContent=s.next?.file||'—';
+  document.getElementById('progress').value=s.current?.progress??0;
+  status.textContent=`LOOP ${s.loopIndex} · ${s.scheduledTotalCount} TRACKS · ${s.scheduledSurpriseCount} SURPRISES · RESET ${s.nextDailyReset}`;
+  miniStatus.textContent=`${s.current?.bpm??'—'} BPM · ${s.current?.progress??0}% · AUTO`;
+}
+async function sync(force=false){
+  try{
+    const s=await getState();state=s;paint(s);play.disabled=false;resync.disabled=false;
+    const url=s.current?.url,pos=Number(s.current?.position||0);if(!url)throw Error('No current track URL');
+    const changed=audio.src!==url&&audio.currentSrc!==url;
+    if(changed){
+      audio.src=url;audio.load();
+      await new Promise(resolve=>{if(audio.readyState>=1)return resolve();const done=()=>{audio.removeEventListener('loadedmetadata',done);resolve()};audio.addEventListener('loadedmetadata',done,{once:true});setTimeout(resolve,6000)});
+      try{audio.currentTime=pos}catch(e){}
+      if(wantedPlaying)await audio.play();
+    }else{
+      const drift=Math.abs((audio.currentTime||0)-pos);if(force||drift>2.5){try{audio.currentTime=pos}catch(e){}}
+    }
+  }catch(e){status.textContent='SYNC ERROR: '+e.message;miniStatus.textContent='SYNC ERROR'}
+}
+play.onclick=async()=>{
+  wantedPlaying=!wantedPlaying;
+  if(wantedPlaying){
+    try{await sync(true);await audio.play();play.textContent='PAUSE';miniStatus.textContent='ON AIR'}
+    catch(e){wantedPlaying=false;play.textContent='PLAY';status.textContent='PLAY ERROR: '+e.message}
+  }else{audio.pause();play.textContent='PLAY';miniStatus.textContent='PAUSED'}
+};
+resync.onclick=()=>sync(true);
+audio.addEventListener('ended',()=>setTimeout(()=>sync(true),250));
+audio.addEventListener('error',()=>{status.textContent='AUDIO ERROR — RESYNCING…';setTimeout(()=>sync(true),1200)});
+setInterval(()=>sync(false),15000);
+sync(false);
+</script>
+</body>
+</html>
