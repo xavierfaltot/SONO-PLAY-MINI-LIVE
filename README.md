@@ -6,9 +6,81 @@ Core idea:
 
 `FOLDER → SCAN → ANALYZE → PROGRAM → PLAY CONTINUOUSLY → STREAM`
 
-This project is independent from Pick Pocket Radio. Pick Pocket Radio is only one possible client/use case.
+SONO PLAY MINI LIVE is the engine. **Pick Pocket Radio is the first live deployment / featured radio use case.**
 
-## V0
+## SONO PLAY MINI LIVE × PICK POCKET RADIO
+
+Current deployment in Berlin:
+
+- Public radio stream: `https://radio.pickpocketradio.org/stream.mp3`
+- Icecast + Liquidsoap on the SONO PLAY MINI LIVE VPS
+- Stateful queue to prevent the same current item from being repeatedly re-enqueued
+- SONO MINI programming based on BPM / energy analysis
+- 159-track program in the current test library
+- Private live console with actual engine state, current / next, queue position and listener monitoring
+- Public listener count and listener peak from Icecast
+- Listener-history graph in the console
+- `≫ NEXT` live control
+- Audio Drop Zone candidate for adding tracks to the live queue
+- Rabbit control candidate: compact listener/current/next view + `≫ NEXT`, without Drop Zone
+
+The collaboration identity is **SONO PLAY MINI LIVE × PICK POCKET RADIO — MIND YOUR CULTURE**.
+
+> The live console, Drop Zone and Rabbit control are being validated against the stateful test engine before the control path is moved to the public production stream.
+
+## Architecture
+
+```text
+MUSIC LIBRARY
+     ↓
+SCAN / ANALYZE
+BPM + ENERGY + DURATION
+     ↓
+SONO PROGRAM
+stateful queue
+     ↓
+LIQUIDSOAP
+     ↓
+ICECAST
+     ↓
+https://radio.pickpocketradio.org/stream.mp3
+     ↓
+PICK POCKET RADIO
+
+CONTROL / MONITORING
+     ├── LIVE CONSOLE
+     │    ├── Icecast / mount / queue health
+     │    ├── public listeners + peak
+     │    ├── listener history graph
+     │    ├── current / next
+     │    ├── ≫ NEXT
+     │    └── DROP AUDIO candidate
+     │
+     └── RABBIT CONTROL candidate
+          ├── listeners + peak
+          ├── current / next
+          └── ≫ NEXT
+```
+
+## Live console deployment
+
+The control layer runs separately from the public audio mount. The current validation architecture uses:
+
+```text
+nginx / HTTPS
+      ↓
+private SONO console
+      ↓
+Liquidsoap telnet control
+      ↓
+stateful test source
+      ↓
+/next-test.mp3
+```
+
+This separation allows NEXT, queue behavior, monitoring and live drops to be tested without destabilizing `/stream.mp3`.
+
+## V0 API
 
 The first version exposes a tiny HTTP API:
 
@@ -68,14 +140,15 @@ Full URLs are also accepted:
 ]
 ```
 
-## Build order
+## Current validation order
 
-1. Validate library scan against the real `/MUSIC/` folder.
-2. Add audio metadata, duration, BPM and energy analysis.
-3. Add SONO MINI energy-climb programming.
-4. Add a real synchronized playback timeline.
-5. Generate a continuous radio stream URL.
-6. Stress-test the stream and recovery behavior.
-7. Only after the engine and stream are stable, build external control interfaces.
+1. Stateful queue — working on `/next-test.mp3`.
+2. Live console — online and displaying Icecast, public listeners, current/next and queue state.
+3. Validate real `≫ NEXT` behavior.
+4. Validate listener-history persistence / graph.
+5. Validate live Drop Zone behavior.
+6. Validate compact Rabbit control.
+7. Move validated control path to the production stream.
+8. Add selective CUT / FADE / MIX transitions.
 
-The existing Pick Pocket Radio player remains untouched until the new stream is proven stable.
+The public stream remains isolated from experimental control changes until each candidate is validated.
